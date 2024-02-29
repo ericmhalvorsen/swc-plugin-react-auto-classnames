@@ -47,6 +47,18 @@ mod test {
     test_inline!(
         SYNTAX,
         runner,
+        /* Name */ simple_example,
+        /* Input */ r#"
+        const MyComponent = () => <Component />;
+        "#,
+        /* Output */ r#"
+        const MyComponent = () => <Component className="file-name-component" />;
+        "#
+    );
+
+    test_inline!(
+        SYNTAX,
+        runner,
         /* Name */ use_state_no_classname_yet,
         /* Input */ r#"
         export const LoginTextField = (props: TextFieldProps) => {

@@ -1,9 +1,19 @@
 use std::path::Path;
 
 use swc_core::common::DUMMY_SP;
-use swc_core::ecma::ast::{Ident, JSXOpeningElement, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElementName, Lit, Str};
-use swc_core::ecma::visit::VisitMut;
+use swc_core::ecma::ast::{
+    Ident,
+    JSXAttr,
+    JSXAttrName,
+    JSXAttrOrSpread,
+    JSXAttrValue,
+    JSXElementName,
+    JSXOpeningElement,
+    Lit,
+    Str
+};
 use swc_core::ecma::atoms::js_word;
+use swc_core::ecma::visit::VisitMut;
 
 #[derive(Default)]
 pub struct AddClassnameVisitor<'a> {
@@ -15,9 +25,7 @@ impl<'a> AddClassnameVisitor<'a> {
         let path = Path::new(file_path);
         let filename: &str = path.file_stem().and_then(|stem| stem.to_str()).unwrap();
 
-        AddClassnameVisitor {
-            filename,
-        }
+        AddClassnameVisitor { filename }
     }
 
     fn class_name(&self, component_name: &str) -> String {
@@ -49,15 +57,17 @@ impl<'a> AddClassnameVisitor<'a> {
 }
 
 impl<'a> VisitMut for AddClassnameVisitor<'a> {
+    /**
+     * The VisitMut trait is used to traverse the AST and modify it in place.
+     * visit_mut_jsx_opening_element is called when the visitor encounters a tag in the JSX.
+     * We add the className attribute to the React node for it to be converted to a CSS class.
+     */
     fn visit_mut_jsx_opening_element(&mut self, n: &mut JSXOpeningElement) {
         let component_name = match &n.name {
             JSXElementName::Ident(ident) => ident.sym.to_string(),
             JSXElementName::JSXMemberExpr(expr) => {
                 // Adjust the pattern match to handle JSXExpr
-                match (&*expr).prop {
-                    // Expr::Ident(ident) => ident.sym.to_string(),
-                    _ => "".to_string(),
-                }
+                match &expr.prop { Ident { sym, .. } => sym.to_string() }
             }
             _ => return,
         };
