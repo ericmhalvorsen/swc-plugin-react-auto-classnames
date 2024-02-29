@@ -11,44 +11,14 @@ will be transformed to
 const MyComponent = () => <Component className="file-name-component" />;
 ```
 
-## Installation
+## Building
 
-```bash
-npm i -D swc-plugin-react-auto-classnames
-```
-
-Add plugin to wherever you have an SWC config (e.g. `.swcrc` file, `swc-loader` config, etc).
-
-```js
-// JavaScript
-{
-  jsc: {
-    parser: {
-      jsx: true,
-    },
-    experimental: {
-      plugins: [
-        ['swc-plugin-react-auto-classnames', {}],
-      ],
-    },
-  },
-}
-
-// TypeScript
-{
-  jsc: {
-    parser: {
-      syntax: 'typescript',
-      tsx: true,
-    },
-    experimental: {
-      plugins: [
-        ['swc-plugin-react-auto-classnames', {}],
-      ],
-    }
-  },
-}
-```
+The .wasm binary is included in the root directory, which includes the functionality.
+To rebuild this binary, you can use `cargo build-wasi --release`. This generates a file
+under target/ - in order to commit this to a release you can copy to root with
+`cp target/wasm32-wasi/release/swc_plugin_react_auto_classnames.wasm .`. Ensure if
+releasing to bump the version strings in both the package.json (for the npm package)
+and the Cargo.toml file.
 
 ## License
 

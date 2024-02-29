@@ -19,7 +19,6 @@ pub fn process_transform(program: Program, data: TransformPluginProgramMetadata)
 
 #[cfg(test)]
 mod test {
-
     use swc_core::common::{chain, Mark};
     use swc_core::ecma::transforms::base::resolver;
     use swc_core::ecma::transforms::testing::Tester;
@@ -40,7 +39,7 @@ mod test {
     fn runner(_: &mut Tester) -> impl Fold {
         chain!(
             resolver(Mark::new(), Mark::new(), false),
-            as_folder(super::AddClassnameVisitor::new("lib/FileName.tsx"))
+            as_folder(super::AddClassnameVisitor::new("lib/File_Name.tsx"))
         )
     }
 

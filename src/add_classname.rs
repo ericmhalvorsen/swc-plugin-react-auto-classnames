@@ -42,7 +42,9 @@ impl<'a> AddClassnameVisitor<'a> {
         let mut prev_char_was_lowercase: bool = false;
 
         for (i, c) in camel_case.chars().enumerate() {
-            if i > 0 && c.is_uppercase() {
+            if c == '_' {
+                result.push('-');
+            } else if i > 0 && c.is_uppercase() {
                 if prev_char_was_lowercase {
                     result.push('-');
                 }
