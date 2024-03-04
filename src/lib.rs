@@ -1,10 +1,13 @@
 mod add_classname;
 
-use swc_core::{ecma::{
-    ast::Program,
-    visit::{as_folder, FoldWith},
-}, plugin::metadata::TransformPluginMetadataContextKind};
 use swc_core::plugin::{plugin_transform, proxies::TransformPluginProgramMetadata};
+use swc_core::{
+    ecma::{
+        ast::Program,
+        visit::{as_folder, FoldWith},
+    },
+    plugin::metadata::TransformPluginMetadataContextKind,
+};
 
 use add_classname::AddClassnameVisitor;
 
@@ -12,7 +15,7 @@ use add_classname::AddClassnameVisitor;
 pub fn process_transform(program: Program, data: TransformPluginProgramMetadata) -> Program {
     let filepath = match data.get_context(&TransformPluginMetadataContextKind::Filename) {
         Some(s) => s,
-        None => String::from("")
+        None => String::from(""),
     };
     program.fold_with(&mut as_folder(AddClassnameVisitor::new(&filepath)))
 }
@@ -50,7 +53,8 @@ mod test {
         /* Input */ r#"
         const MyComponent = () => <Component />;
         "#,
-        /* Output */ r#"
+        /* Output */
+        r#"
         const MyComponent = () => <Component className="file-name-component" />;
         "#
     );
@@ -59,14 +63,16 @@ mod test {
         SYNTAX,
         runner,
         /* Name */ use_state_no_classname_yet,
-        /* Input */ r#"
+        /* Input */
+        r#"
         export const LoginTextField = (props: TextFieldProps) => {
             const [filename, setFilename] = useState("file.txt");
 
             return <TextField id={{filename}} />;
           };
         "#,
-        /* Output */ r#"
+        /* Output */
+        r#"
           export const LoginTextField = (props: TextFieldProps) => {
             const [filename, setFilename] = useState("file.txt");
 
@@ -79,14 +85,16 @@ mod test {
         SYNTAX,
         runner,
         /* Name */ use_state_with_classname,
-        /* Input */ r#"
+        /* Input */
+        r#"
           export const LoginTextField = (props: TextFieldProps) => {
             const [filename, setFilename] = useState("file.txt");
 
             return <TextField className="no-print" id={{filename}} />;
           };
         "#,
-        /* Output */ r#"
+        /* Output */
+        r#"
           export const LoginTextField = (props: TextFieldProps) => {
             const [filename, setFilename] = useState("file.txt");
 
@@ -99,7 +107,8 @@ mod test {
         SYNTAX,
         runner,
         /* Name */ complex_no_classname_yet,
-        /* Input */ r#"
+        /* Input */
+        r#"
           export const LoginTextField = (props: TextFieldProps) => (
             <TextField
               variant="outlined"
@@ -115,7 +124,8 @@ mod test {
             />
           );
         "#,
-        /* Output */ r#"
+        /* Output */
+        r#"
           export const LoginTextField = (props: TextFieldProps) =>
             <TextField
               variant="outlined"
@@ -137,7 +147,8 @@ mod test {
         SYNTAX,
         runner,
         /* Name */ complex_with_classname,
-        /* Input */ r#"
+        /* Input */
+        r#"
           export const LoginTextField = (props: TextFieldProps) => (
             <TextField
               variant="outlined"
@@ -155,7 +166,8 @@ mod test {
             />
           );
         "#,
-        /* Output */ r#"
+        /* Output */
+        r#"
           export const LoginTextField = (props: TextFieldProps) =>
             <TextField
               variant="outlined"
@@ -171,5 +183,141 @@ mod test {
               }}
             />;
         "#
+    );
+
+    test_inline!(
+        SYNTAX,
+        runner,
+        /* Name */ complex_class_assignment,
+        /* Input */
+        r#"
+        export const GridComponent = (props: TextFieldProps) => (
+          <>
+            <GridApiRefContext.Provider value={gridApiRef}>
+              {props.children}
+            </GridApiRefContext.Provider>
+            <div
+              className={`
+                ag-theme-alpine
+                ${
+                  gridProps.onRowClicked || gridProps.onRowSelected
+                    ? "clickable-rows"
+                    : ""
+                }
+                ${className || ""}
+              `}
+              style={{
+                height: height ? height : staticHeight ? staticHeight : "100%",
+                width: "100%",
+                overflow: "visible",
+              }}
+            >
+              <AgGridReact
+                defaultColDef={{
+                  sortable: true,
+                  wrapHeaderText: true,
+                  ...props.defaultColDef,
+                }}
+                enableCellTextSelection
+                suppressCellFocus
+                suppressMovableColumns={suppressMovableColumns}
+                onGridReady={gridReady}
+                onColumnResized={handleColumnResized}
+                isExternalFilterPresent={() => !!ids.current && enableFilters}
+                doesExternalFilterPass={node =>
+                  ids.current ? ids.current.includes(node.data.id) : true
+                }
+                {...gridProps}
+              />
+            </div>
+          </>
+        );
+      "#,
+        /* Output */
+        r#"
+        export const GridComponent = (props: TextFieldProps) =>
+          <>
+            <GridApiRefContext.Provider value={gridApiRef} className="file-name-provider">
+              {props.children}
+            </GridApiRefContext.Provider>
+            <div
+              className={`
+                ag-theme-alpine
+                ${
+                  gridProps.onRowClicked || gridProps.onRowSelected
+                    ? "clickable-rows"
+                    : ""
+                }
+                ${className || ""}
+              `}
+              style={{
+                height: height ? height : staticHeight ? staticHeight : "100%",
+                width: "100%",
+                overflow: "visible",
+              }}
+            >
+              <AgGridReact
+                defaultColDef={{
+                  sortable: true,
+                  wrapHeaderText: true,
+                  ...props.defaultColDef,
+                }}
+                enableCellTextSelection
+                suppressCellFocus
+                suppressMovableColumns={suppressMovableColumns}
+                onGridReady={gridReady}
+                onColumnResized={handleColumnResized}
+                isExternalFilterPresent={() => !!ids.current && enableFilters}
+                doesExternalFilterPass={node =>
+                  ids.current ? ids.current.includes(node.data.id) : true
+                }
+                {...gridProps}
+                className="file-name-ag-grid-react"
+              />
+            </div>
+          </>;
+      "#
+    );
+
+    test_inline!(
+        SYNTAX,
+        runner,
+        /* Name */ fragment_no_classname,
+        /* Input */
+        r#"
+        export const GridComponent = (props: TextFieldProps) => (
+          <>
+            Some text for this fragment
+          </>
+        );
+      "#,
+        /* Output */
+        r#"
+        export const GridComponent = (props: TextFieldProps) =>
+          <>
+            Some text for this fragment
+          </>;
+      "#
+    );
+
+    test_inline!(
+        SYNTAX,
+        runner,
+        /* Name */ fragment_literal_no_classname,
+        /* Input */
+        r#"
+          export const GridComponent = (props: TextFieldProps) => (
+            <Fragment>
+              Some text for this fragment
+            </Fragment>
+          );
+        "#,
+        /* Output */
+        r#"
+          export const GridComponent = (props: TextFieldProps) =>
+            <Fragment>
+              Some text for this fragment
+            </Fragment>;
+          "#
     );
 }

@@ -2,15 +2,8 @@ use std::path::Path;
 
 use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::{
-    Ident,
-    JSXAttr,
-    JSXAttrName,
-    JSXAttrOrSpread,
-    JSXAttrValue,
-    JSXElementName,
-    JSXOpeningElement,
-    Lit,
-    Str
+    Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElementName, JSXOpeningElement,
+    Lit, Str,
 };
 use swc_core::ecma::atoms::js_word;
 use swc_core::ecma::visit::VisitMut;
@@ -29,7 +22,6 @@ impl<'a> AddClassnameVisitor<'a> {
     }
 
     fn class_name(&self, component_name: &str) -> String {
-
         format!(
             "{}-{}",
             self.camel_to_hyphen_case(self.filename),
@@ -67,12 +59,15 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
     fn visit_mut_jsx_opening_element(&mut self, n: &mut JSXOpeningElement) {
         let component_name = match &n.name {
             JSXElementName::Ident(ident) => ident.sym.to_string(),
-            JSXElementName::JSXMemberExpr(expr) => {
-                // Adjust the pattern match to handle JSXExpr
-                match &expr.prop { Ident { sym, .. } => sym.to_string() }
-            }
+            JSXElementName::JSXMemberExpr(expr) => match &expr.prop {
+                Ident { sym, .. } => sym.to_string(),
+            },
             _ => return,
         };
+
+        if component_name == "Fragment" {
+            return;
+        }
 
         let class_name: String = self.class_name(&component_name);
 
@@ -80,7 +75,7 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
             JSXAttrOrSpread::JSXAttr(JSXAttr { name, value, .. }) => {
                 if let JSXAttrName::Ident(ident) = name {
                     if ident.sym == js_word!("className") {
-                        if let Some(JSXAttrValue::Lit(Lit::Str(existing_value))) = value.take() {
+                        if let Some(JSXAttrValue::Lit(Lit::Str(existing_value))) = value {
                             // Append to the existing className
                             let new_value = Lit::Str(Str {
                                 span: DUMMY_SP,
@@ -89,7 +84,7 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
                             });
                             *value = Some(JSXAttrValue::Lit(new_value));
                         }
-                        return true
+                        return true;
                     }
                 }
                 false
@@ -98,17 +93,15 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
         });
 
         if !has_class_name {
-            n.attrs.push(
-                JSXAttrOrSpread::JSXAttr(JSXAttr {
+            n.attrs.push(JSXAttrOrSpread::JSXAttr(JSXAttr {
+                span: DUMMY_SP,
+                name: JSXAttrName::Ident(Ident::new(js_word!("className"), DUMMY_SP)),
+                value: Some(JSXAttrValue::Lit(Lit::Str(Str {
                     span: DUMMY_SP,
-                    name: JSXAttrName::Ident(Ident::new(js_word!("className"), DUMMY_SP)),
-                    value: Some(JSXAttrValue::Lit(Lit::Str(Str {
-                        span: DUMMY_SP,
-                        value: class_name.into(),
-                        raw: None,
-                    }))),
-                })
-            );
+                    value: class_name.into(),
+                    raw: None,
+                }))),
+            }));
         }
     }
 }
