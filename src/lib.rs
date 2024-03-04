@@ -237,7 +237,7 @@ mod test {
         r#"
         export const GridComponent = (props: TextFieldProps) =>
           <>
-            <GridApiRefContext.Provider value={gridApiRef} className="file-name-provider">
+            <GridApiRefContext.Provider value={gridApiRef}>
               {props.children}
             </GridApiRefContext.Provider>
             <div

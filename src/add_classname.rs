@@ -65,7 +65,7 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
             _ => return,
         };
 
-        if component_name == "Fragment" || component_name == "ThemeProvider" {
+        if component_name.contains("Fragment") || component_name.contains("Provider") {
             return;
         }
 
