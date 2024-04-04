@@ -237,7 +237,7 @@ mod test {
         r#"
         export const GridComponent = (props: TextFieldProps) =>
           <>
-            <GridApiRefContext.Provider value={gridApiRef}>
+            <GridApiRefContext.Provider value={gridApiRef} className="file-name-provider">
               {props.children}
             </GridApiRefContext.Provider>
             <div
@@ -319,5 +319,192 @@ mod test {
               Some text for this fragment
             </Fragment>;
           "#
+    );
+
+    test_inline!(
+        SYNTAX,
+        runner,
+        /* Name */ component_within_props,
+        /* Input */
+        r#"
+          <Row alignRight gap="50px" style={{ marginTop: "32px" }}>
+            <ModalOpener
+              Opener={({ onOpen }) => (
+                <PrimaryButton
+                  scale="big"
+                  text={display.buttonText}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.stopPropagation();
+                    onOpen();
+                  }}
+                />
+              )}
+              Modal={({ onClose }) => (
+                <ConfirmationDialog
+                  onCancel={onClose}
+                  text={display.modalText}
+                  onConfirm={async (event: any) => {
+                    event.preventDefault();
+                    await updateVendor();
+                  }}
+                />
+              )}
+            />
+          </Row>
+        "#,
+        /* Output */
+        r#"
+          <Row alignRight gap="50px" style={{ marginTop: "32px" }} className="file-name-row">
+            <ModalOpener
+              Opener={({ onOpen }) =>
+                <PrimaryButton
+                  scale="big"
+                  text={display.buttonText}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.stopPropagation();
+                    onOpen();
+                  }}
+                  className="file-name-primary-button"
+                />
+              }
+              Modal={({ onClose }) =>
+                <ConfirmationDialog
+                  onCancel={onClose}
+                  text={display.modalText}
+                  onConfirm={async (event: any) => {
+                    event.preventDefault();
+                    await updateVendor();
+                  }}
+                  className="file-name-confirmation-dialog"
+                />
+              }
+              className="file-name-modal-opener"
+            />
+          </Row>
+        "#
+    );
+
+    test_inline!(
+        SYNTAX,
+        runner,
+        /* Name */ component_within_component_within_props,
+        /* Input */
+        r#"
+          <Row alignRight gap="50px" style={{ marginTop: "32px" }}>
+            <ModalOpener
+              Opener={({ onOpen }) => (
+                <PrimaryButton
+                  scale="big"
+                  text={display.buttonText}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.stopPropagation();
+                    onOpen();
+                  }}
+                />
+              )}
+              Modal={({ onClose }) => (
+                <ConfirmationDialog
+                  onCancel={onClose}
+                  text={display.modalText}
+                  onConfirm={async (event: any) => {
+                    event.preventDefault();
+                    await updateVendor();
+                  }}
+                >
+                  <SubDialog className="no-print" />
+                </ConfirmationDialog>
+              )}
+            />
+          </Row>
+        "#,
+        /* Output */
+        r#"
+          <Row alignRight gap="50px" style={{ marginTop: "32px" }} className="file-name-row">
+            <ModalOpener
+              Opener={({ onOpen }) =>
+                <PrimaryButton
+                  scale="big"
+                  text={display.buttonText}
+                  onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                    e.stopPropagation();
+                    onOpen();
+                  }}
+                  className="file-name-primary-button"
+                />
+              }
+              Modal={({ onClose }) =>
+                <ConfirmationDialog
+                  onCancel={onClose}
+                  text={display.modalText}
+                  onConfirm={async (event: any) => {
+                    event.preventDefault();
+                    await updateVendor();
+                  }}
+                  className="file-name-confirmation-dialog"
+                >
+                  <SubDialog className="no-print file-name-sub-dialog" />
+                </ConfirmationDialog>
+              }
+              className="file-name-modal-opener"
+            />
+          </Row>
+        "#
+    );
+
+    test_inline!(
+        SYNTAX,
+        runner,
+        /* Name */ class_component_with_render_route,
+        /* Input */
+        r#"
+          class NotificationsAlert extends React.Component<Props> {
+            public constructor(props: Props) {
+              super(props);
+            }
+
+            public render() {
+              return (
+                <Link to="/notifications">
+                  <Route
+                    path="/notifications"
+                    children={route => (
+                      <AlertWrapper>
+                        <Icon icon={faBell} color={colors.white} />
+                        {!!this.props.hasUnreadNotifications && !route.match && (
+                          <AlertBubble />
+                        )}
+                      </AlertWrapper>
+                    )}
+                  />
+                </Link>
+              );
+            }
+          }
+        "#,
+        /* Output */
+        r#"
+          class NotificationsAlert extends React.Component<Props> {
+            public constructor(props: Props) {
+              super(props);
+            }
+
+            public render() {
+              return <Link to="/notifications" className="file-name-link">
+                  <Route
+                    path="/notifications"
+                    children={route =>
+                      <AlertWrapper className="file-name-alert-wrapper">
+                        <Icon icon={faBell} color={colors.white} className="file-name-icon"/>
+                        {!!this.props.hasUnreadNotifications && !route.match &&
+                          <AlertBubble className="file-name-alert-bubble"/>
+                        }
+                      </AlertWrapper>
+                    }
+                    className="file-name-route"
+                  />
+                </Link>;
+            }
+          }
+        "#
     );
 }
