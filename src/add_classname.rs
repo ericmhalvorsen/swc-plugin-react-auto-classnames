@@ -2,11 +2,11 @@ use std::path::Path;
 
 use swc_core::common::DUMMY_SP;
 use swc_core::ecma::ast::{
-    Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue, JSXElementName, JSXOpeningElement,
-    Lit, Str,
+    BlockStmtOrExpr, Expr, Ident, JSXAttr, JSXAttrName, JSXAttrOrSpread, JSXAttrValue,
+    JSXElementName, JSXExpr, JSXExprContainer, JSXOpeningElement, Lit, Stmt, Str,
 };
 use swc_core::ecma::atoms::js_word;
-use swc_core::ecma::visit::VisitMut;
+use swc_core::ecma::visit::{VisitMut, VisitMutWith};
 
 #[derive(Default)]
 pub struct AddClassnameVisitor<'a> {
@@ -65,7 +65,7 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
             _ => return,
         };
 
-        if component_name.contains("Fragment") || component_name.contains("Provider") {
+        if component_name.contains("Fragment") {
             return;
         }
 
@@ -74,9 +74,9 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
         let has_class_name = n.attrs.iter_mut().any(|attr| match attr {
             JSXAttrOrSpread::JSXAttr(JSXAttr { name, value, .. }) => {
                 if let JSXAttrName::Ident(ident) = name {
+                    // If you find the className attribute, append to it
                     if ident.sym == js_word!("className") {
                         if let Some(JSXAttrValue::Lit(Lit::Str(existing_value))) = value {
-                            // Append to the existing className
                             let new_value = Lit::Str(Str {
                                 span: DUMMY_SP,
                                 value: format!("{} {}", existing_value.value, class_name).into(),
@@ -85,6 +85,12 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
                             *value = Some(JSXAttrValue::Lit(new_value));
                         }
                         return true;
+                    }
+
+                    // If the value of a prop is a function that returns JSX or a JSXComponent
+                    // we need to visit it to add the className attribute
+                    if let Some(JSXAttrValue::JSXExprContainer(expr_container)) = value {
+                        self.visit_mut_jsx_expr_container(expr_container);
                     }
                 }
                 false
@@ -103,5 +109,38 @@ impl<'a> VisitMut for AddClassnameVisitor<'a> {
                 }))),
             }));
         }
+    }
+
+    fn visit_mut_jsx_expr_container(&mut self, expr_container: &mut JSXExprContainer) {
+        match &mut expr_container.expr {
+            JSXExpr::Expr(expr) => {
+                if let Expr::Arrow(arrow_expr) = &mut **expr {
+                    match &mut *arrow_expr.body {
+                        BlockStmtOrExpr::Expr(inner_expr) => {
+                            // Adjusted handling for boxed expressions.
+                            // Dereference the boxed expression to inspect it.
+                            if let Expr::JSXElement(element) = &mut **inner_expr {
+                                element.visit_mut_with(self);
+                            }
+                        }
+                        BlockStmtOrExpr::BlockStmt(block_stmt) => {
+                            // Iterate over statements in block statement for return statements.
+                            for stmt in &mut block_stmt.stmts {
+                                if let Stmt::Return(return_stmt) = stmt {
+                                    if let Some(returned_expr) = &mut return_stmt.arg {
+                                        // Again, properly dereference the boxed expression to inspect it.
+                                        if let Expr::JSXElement(element) = &mut **returned_expr {
+                                            element.visit_mut_with(self);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+        expr_container.visit_mut_children_with(self);
     }
 }
